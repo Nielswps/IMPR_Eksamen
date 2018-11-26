@@ -19,15 +19,24 @@ struct cyclist{
     char time[NUMBER_OF_SYMPOLS_IN_TIME];
 }; typedef struct cyclist cyclist;
 
+struct dane_who_finished_a_race{
+    char cyclist_name[MAX_CYCLIST_NAME_LENGTH];
+    int number_of_finished_races;
+}; typedef struct dane_who_finished_a_race dane_who_finished_a_race;
+
 void* read_file_to_list(int* list_length);
 
 void print_italian_cyclists_above_thirty(const cyclist* list, const int list_length);
+
+dane_who_finished_a_race* danish_cyclists_who_finished_a_race(const cyclist* list, const int list_length);
 
 int main(void){
 
     int /*i = 0,*/ list_length;
 
     cyclist *list_of_cyclists;
+
+    dane_who_finished_a_race *list_of_danish_cyclists_who_finished_a_race;
 
     list_of_cyclists = read_file_to_list(&list_length);
 
@@ -38,6 +47,10 @@ int main(void){
     printf("%d\n", list_length);
 
     print_italian_cyclists_above_thirty(list_of_cyclists, list_length);
+
+    list_of_danish_cyclists_who_finished_a_race = danish_cyclists_who_finished_a_race(list_of_cyclists, list_length);
+
+    printf("%s %d\n", list_of_danish_cyclists_who_finished_a_race[0].cyclist_name, list_of_danish_cyclists_who_finished_a_race[0].number_of_finished_races);
 
     free(list_of_cyclists);
 
@@ -81,4 +94,36 @@ void print_italian_cyclists_above_thirty(const cyclist* list, const int list_len
     for(i = 0; i < j; i++){
         printf("%s %s | %d %s %s | %s %s\n", list_of_italian_cyclists_above_thirty[i].race_name, list_of_italian_cyclists_above_thirty[i].cyclist_name, list_of_italian_cyclists_above_thirty[i].age, list_of_italian_cyclists_above_thirty[i].team, list_of_italian_cyclists_above_thirty[i].nationality, list_of_italian_cyclists_above_thirty[i].placement, list_of_italian_cyclists_above_thirty[i].time);
     }
+}
+
+dane_who_finished_a_race* danish_cyclists_who_finished_a_race(const cyclist* list, const int list_length){
+    int i = 0, j = 0, k = 0, found_match = 0, end_of_array = 0;
+
+    dane_who_finished_a_race *list_of_danish_cyclists_who_finished_a_race;
+    list_of_danish_cyclists_who_finished_a_race = (dane_who_finished_a_race *)malloc(TOTAL_NUMBER_OF_PARTICIPENTS * sizeof(dane_who_finished_a_race));
+
+    while(i < list_length){
+        if((strcmp(list[i].nationality,"DEN") == 0) && (strcmp(list[i].placement,"DNF") != 0)){
+            k = 0;
+            while(k <= j && found_match == 0 && end_of_array == 0){
+                if(strcmp(list[i].cyclist_name,list_of_danish_cyclists_who_finished_a_race[k].cyclist_name) != 0 && k == j){
+                    *list_of_danish_cyclists_who_finished_a_race[j].cyclist_name = *list[i].cyclist_name;
+                    list_of_danish_cyclists_who_finished_a_race[j].number_of_finished_races = 1;
+                    j++;
+                    end_of_array = 1;
+                }else if(strcmp(list[i].cyclist_name,list_of_danish_cyclists_who_finished_a_race[k].cyclist_name) == 0){
+                    list_of_danish_cyclists_who_finished_a_race[k].number_of_finished_races++;
+                    found_match = 1;
+                }else{
+                    k++;
+                }
+            }
+        }
+        i++;
+    }
+    for(i = 0; i < j; i++){
+        printf("%s %d\n", list_of_danish_cyclists_who_finished_a_race[i].cyclist_name, list_of_danish_cyclists_who_finished_a_race[i].number_of_finished_races);
+    }
+
+    return list_of_danish_cyclists_who_finished_a_race;
 }
