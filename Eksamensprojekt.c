@@ -26,7 +26,7 @@ struct cyclist{
     char team[ABBREVIATIONS_LENGTH];
     char nationality[ABBREVIATIONS_LENGTH];
     int placement;
-    char time[NUMBER_OF_SYMPOLS_IN_TIME];
+    int time[3];
     int points;
 }; typedef struct cyclist cyclist;
 
@@ -36,20 +36,24 @@ struct dane_who_finished_a_race{
 }; typedef struct dane_who_finished_a_race dane_who_finished_a_race;
 
 void* read_file_to_list(int* list_length, race* races, int* number_of_races);
+void count_up_race_rosters(const int i, const cyclist* output_pointer_to_array_of_cyclists, race* races, int* number_of_races);
 void qsort(void *array, size_t lenght, size_t size, int (*compar)(const void *, const void*));
 void print_italian_cyclists_above_thirty(const cyclist* list, const int list_length);
 void print_list_of_cyclists(const cyclist* list, const int list_length, const int print_points);
 dane_who_finished_a_race* danish_cyclists_who_finished_a_race(const cyclist* list, const int full_list_length, int* list_length);
 void* create_and_sort_ranglist(cyclist* list, const int full_list_length, int* list_length, const race* races);
 void assign_points_to_cyclists_for_every_race(cyclist* list, const int full_list_length, const race* races);
-int compare_points(const void* a, const void* b);
 void get_last_name(cyclist* cyclist);
+int compare_points(const void* a, const void* b);
+void find_fastes_cyclist_of_paris_and_amstel(const cyclist* full_list, const int* full_list_length, cyclist* fastes_cyclist, int* time_for_fastes_cyclist);
+void make_list_of_cyclists_paris_amstel(const cyclist* full_list, cyclist* paris_cyclists, cyclist* amstel_cyclists, const int* full_list_length, int* paris_list_length, int* amstel_list_length);
+void make_array_with_positions_of_cyclists_in_the_two_arrays(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][2]);
+int biggest_of(const int a, const int b);
 
 int main(void){
 
-    int i = 0, list_length_of_all_cyclists, list_length_of_danes_who_finished, list_length_of_ranglist, number_of_races = 0;
-    cyclist* list_of_cyclists;
-    cyclist* ranglist_of_cyclists_with_total_points;
+    int i = 0, list_length_of_all_cyclists, list_length_of_danes_who_finished, list_length_of_ranglist, number_of_races = 0, total_time_for_fastes_cyclist;
+    cyclist *list_of_cyclists, *ranglist_of_cyclists_with_total_points, fastes_cyclist;
     dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race;
     race* races;
 
@@ -71,6 +75,8 @@ int main(void){
 
     print_list_of_cyclists(ranglist_of_cyclists_with_total_points, 10, 1);
 
+    find_fastes_cyclist_of_paris_and_amstel(list_of_cyclists, &list_length_of_all_cyclists, &fastes_cyclist, &total_time_for_fastes_cyclist);
+
     free(list_of_cyclists);
     free(list_of_danish_cyclists_who_finished_a_race);
     free(ranglist_of_cyclists_with_total_points);
@@ -80,7 +86,7 @@ int main(void){
 }
 
 void* read_file_to_list(int* list_length, race* races, int* number_of_races){
-    int i = 0, j = 0, k = 0, found_match = 0, end_of_array = 0, scan_result;
+    int i = 0, j = 0, scan_result;
     char temporary_placeholder_placement[4];
     FILE* read_file_pointer = fopen("cykelloeb","r");
 
@@ -88,7 +94,17 @@ void* read_file_to_list(int* list_length, race* races, int* number_of_races){
     output_pointer_to_array_of_cyclists = (cyclist *)malloc(TOTAL_NUMBER_OF_PARTICIPENTS * sizeof(cyclist));
 
     while(!feof(read_file_pointer)){
-        scan_result = fscanf(read_file_pointer, " %[a-zA-Z] \"%[a-zA-Z-' ]\" | %d %[A-Z] %[A-Z] | %3[A-Z0-9] %[0-9:-]", output_pointer_to_array_of_cyclists[i].race_name, output_pointer_to_array_of_cyclists[i].cyclist_name, &output_pointer_to_array_of_cyclists[i].age, output_pointer_to_array_of_cyclists[i].team, output_pointer_to_array_of_cyclists[i].nationality, temporary_placeholder_placement, output_pointer_to_array_of_cyclists[i].time);
+        scan_result = fscanf(read_file_pointer, " %[a-zA-Z] \"%[a-zA-Z-' ]\" | %d %[A-Z] %[A-Z] | %3[A-Z0-9] %d : %d : %d",
+                                                output_pointer_to_array_of_cyclists[i].race_name,
+                                                output_pointer_to_array_of_cyclists[i].cyclist_name,
+                                                &output_pointer_to_array_of_cyclists[i].age,
+                                                output_pointer_to_array_of_cyclists[i].team,
+                                                output_pointer_to_array_of_cyclists[i].nationality,
+                                                temporary_placeholder_placement,
+                                                &output_pointer_to_array_of_cyclists[i].time[0],
+                                                &output_pointer_to_array_of_cyclists[i].time[1],
+                                                &output_pointer_to_array_of_cyclists[i].time[2]);
+
         if(strcmp(temporary_placeholder_placement,"OTL") == 0){
             output_pointer_to_array_of_cyclists[i].placement = (-1);
         }else if(strcmp(temporary_placeholder_placement,"DNF") == 0){
@@ -100,29 +116,15 @@ void* read_file_to_list(int* list_length, race* races, int* number_of_races){
 
         get_last_name(output_pointer_to_array_of_cyclists);
 
-        while(k <= j && found_match == 0 && end_of_array == 0){
-            if((k == j && strcmp(output_pointer_to_array_of_cyclists[i].race_name, races[k].name) != 0)){
-                strcpy(races[k].name, output_pointer_to_array_of_cyclists[i].race_name);
-                races[k].roster_size = 1;
-                j++;
-                end_of_array = 1;
-            }else if(strcmp(output_pointer_to_array_of_cyclists[i].race_name, races[k].name) == 0){
-                races[k].roster_size++;
-                found_match = 1;
-            }else{
-                k++;
-            }
-        }
-        k = 0; found_match = 0; end_of_array = 0;
+        count_up_race_rosters(i, output_pointer_to_array_of_cyclists, races, number_of_races);
+
         i++;
     }
     i--;
-    printf("%d\n", i);
     if(scan_result < 1){
-        printf("%d\n", scan_result);
+        /*Insert ERROR code*/
     }
     *list_length = i;
-    *number_of_races = j;
 
     for(i = 0; i < j; i++){
         printf("%s %d\n", races[i].name, races[i].roster_size);
@@ -132,7 +134,23 @@ void* read_file_to_list(int* list_length, race* races, int* number_of_races){
 
     return output_pointer_to_array_of_cyclists;
 }
-
+void count_up_race_rosters(const int i, const cyclist* output_pointer_to_array_of_cyclists, race* races, int* number_of_races){
+    int j = *number_of_races, k = 0, found_match = 0, end_of_array = 0;
+    while(k <= j && found_match == 0 && end_of_array == 0){
+        if((k == j && strcmp(output_pointer_to_array_of_cyclists[i].race_name, races[k].name) != 0)){
+            strcpy(races[k].name, output_pointer_to_array_of_cyclists[i].race_name);
+            races[k].roster_size = 1;
+            j++;
+            end_of_array = 1;
+        }else if(strcmp(output_pointer_to_array_of_cyclists[i].race_name, races[k].name) == 0){
+            races[k].roster_size++;
+            found_match = 1;
+        }else{
+            k++;
+        }
+    }
+    *number_of_races = j;
+}
 void print_italian_cyclists_above_thirty(const cyclist* list, const int list_length){
     int i = 0, j = 0;
     cyclist list_of_italian_cyclists_above_thirty[TOTAL_NUMBER_OF_PARTICIPENTS];
@@ -145,7 +163,6 @@ void print_italian_cyclists_above_thirty(const cyclist* list, const int list_len
     }
     print_list_of_cyclists(list_of_italian_cyclists_above_thirty, j, 0);
 }
-
 dane_who_finished_a_race* danish_cyclists_who_finished_a_race(const cyclist* list, const int full_list_length, int* list_length){
     int i = 0, j = 0, k = 0, found_match = 0, end_of_array = 0;
 
@@ -176,7 +193,6 @@ dane_who_finished_a_race* danish_cyclists_who_finished_a_race(const cyclist* lis
     *list_length = j;
     return list_of_danish_cyclists_who_finished_a_race;
 }
-
 void print_list_of_cyclists(const cyclist* list, const int list_length, const int print_points){
 
     int i;
@@ -190,13 +206,15 @@ void print_list_of_cyclists(const cyclist* list, const int list_length, const in
             strncpy(placement_as_string, "DNF", 3);
         }
 
-        printf("%s %s | %d %s %s | %s %s", list[i].race_name,
+        printf("%s %s | %d %s %s | %s   %d:%d:%d", list[i].race_name,
                                              list[i].cyclist_name,
                                              list[i].age,
                                              list[i].team,
                                              list[i].nationality,
                                              placement_as_string,
-                                             list[i].time);
+                                             list[i].time[0],
+                                             list[i].time[1],
+                                             list[i].time[2]);
         if(print_points == 1){
             printf("     Points: %d\n", list[i].points);
         }else{
@@ -205,18 +223,13 @@ void print_list_of_cyclists(const cyclist* list, const int list_length, const in
     }
     printf("\n\n\n");
 }
-
 void* create_and_sort_ranglist(cyclist* list, const int full_list_length, int* list_length, const race* races){
     int i = 0, j = 0, k = 0, found_match = 0, end_of_array = 0;
 
     cyclist* output_pointer_with_ranglist;
     output_pointer_with_ranglist = (cyclist *)malloc(TOTAL_NUMBER_OF_PARTICIPENTS * sizeof(cyclist));
 
-    printf("Inside create_and_sort_ranglist\n");
-
     assign_points_to_cyclists_for_every_race(list, full_list_length, races);
-
-    printf("Points have been assigned\n");
 
     while(i < full_list_length){
         while(k <= j && found_match == 0 && end_of_array == 0){
@@ -239,18 +252,14 @@ void* create_and_sort_ranglist(cyclist* list, const int full_list_length, int* l
         end_of_array = 0;
     }
     *list_length = j;
-    printf("List is ready to be sorted\n");
 
     qsort(output_pointer_with_ranglist, j, sizeof(struct cyclist), compare_points);
-
-    printf("Sorted\n\n");
 
     /*print_list_of_cyclists(output_pointer_with_ranglist, j);*/
 
     return output_pointer_with_ranglist;
 
 }
-
 void assign_points_to_cyclists_for_every_race(cyclist* list, const int full_list_length, const race* races){
     int i = 0, j = 0;
     while(i < full_list_length){
@@ -270,11 +279,9 @@ void assign_points_to_cyclists_for_every_race(cyclist* list, const int full_list
         }else if(list[i].placement == -1){
             list[i].points += 1;
         }
-        printf("%s %d\n", list[i].cyclist_name, list[i].points);
         i++;
     }
 }
-
 int compare_points(const void* a, const void* b){
     cyclist *pointer_one = (cyclist *) a;
     cyclist *pointer_two = (cyclist *) b;
@@ -292,7 +299,6 @@ int compare_points(const void* a, const void* b){
         }
     }
 }
-
 void get_last_name(cyclist* cyclist){
     int i, exit = 0, full_name_length;
     full_name_length = strlen(cyclist->cyclist_name);
@@ -303,4 +309,44 @@ void get_last_name(cyclist* cyclist){
             exit = 1;
         }
     }
+}
+void find_fastes_cyclist_of_paris_and_amstel(const cyclist* full_list, const int* full_list_length, cyclist* fastes_cyclist, int* time_for_fastes_cyclist){
+    int paris_list_length = 0, amstel_list_length = 0, list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][2];
+    cyclist *paris_cyclists, *amstel_cyclists;
+
+    paris_cyclists = (cyclist *)malloc(TOTAL_NUMBER_OF_PARTICIPENTS * sizeof(cyclist));
+    amstel_cyclists = (cyclist *)malloc(TOTAL_NUMBER_OF_PARTICIPENTS * sizeof(cyclist));
+
+    make_list_of_cyclists_paris_amstel(full_list, paris_cyclists, amstel_cyclists, full_list_length, &paris_list_length, &amstel_list_length);
+    make_array_with_positions_of_cyclists_in_the_two_arrays(paris_list_length, amstel_list_length, paris_cyclists, amstel_cyclists, list_placements);
+
+    free(paris_cyclists);
+    free(amstel_cyclists);
+}
+void make_list_of_cyclists_paris_amstel(const cyclist* full_list, cyclist* paris_cyclists, cyclist* amstel_cyclists, const int* full_list_length, int* paris_list_length, int* amstel_list_length){
+    int i;
+    for(i = 0; i < *full_list_length; i++){
+        if(strcmp(full_list[i].race_name, "ParisRoubaix") == 0){
+            paris_cyclists[*paris_list_length] = full_list[i];
+            *paris_list_length += 1;
+        }else if(strcmp(full_list[i].race_name, "AmstelGoldRace") == 0){
+            amstel_cyclists[*amstel_list_length] = full_list[i];
+            *amstel_list_length += 1;
+        }
+    }
+}
+void make_array_with_positions_of_cyclists_in_the_two_arrays(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][2]){
+    int i, j, k = 0;
+    for(i = 0; i < paris_list_length; i++){
+        for(j = 0; j < amstel_list_length; j++){
+            if(strcmp(paris_cyclists[i].cyclist_name, amstel_cyclists[j].cyclist_name) == 0){
+                list_placements[k][0] = i;
+                list_placements[k][1] = j;
+                k++;
+            }
+        }
+    }
+}
+int biggest_of(const int a, const int b){
+    return (a > b ? a : b);
 }
