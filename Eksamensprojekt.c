@@ -12,6 +12,9 @@
 #define TOTAL_NUMBER_OF_RACES 10
 #define OTL -1
 #define DNF -2
+#define HOUR_IN_SECONDS 3600
+#define MINUTE_IN_SECONDS 60
+#define INFINITY 999999
 
 struct race{
     char name[MAX_RACE_NAME_LENGTH];
@@ -45,23 +48,26 @@ void* create_and_sort_ranglist(cyclist* list, const int full_list_length, int* l
 void assign_points_to_cyclists_for_every_race(cyclist* list, const int full_list_length, const race* races);
 void get_last_name(cyclist* cyclist);
 int compare_points(const void* a, const void* b);
-void find_fastes_cyclist_of_paris_and_amstel(const cyclist* full_list, const int* full_list_length, cyclist* fastes_cyclist, int* time_for_fastes_cyclist);
+void find_fastes_cyclist_of_paris_and_amstel(cyclist* full_list, const int* full_list_length, cyclist* fastes_cyclist, int* time_for_fastes_cyclist);
 void make_list_of_cyclists_paris_amstel(const cyclist* full_list, cyclist* paris_cyclists, cyclist* amstel_cyclists, const int* full_list_length, int* paris_list_length, int* amstel_list_length);
-void make_array_with_positions_of_cyclists_in_the_two_arrays(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][2]);
+void make_array_with_positions_of_cyclists_in_the_two_arrays(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int* number_of_cyclists_in_both_races);
+int get_total_time(int paris_time[3], int amstel_time[3]);
+int find_shortest_time(int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int list_length);
 int biggest_of(const int a, const int b);
+int smallest_of(const int a, const int b);
+void print_total_time(const int i);
+double average_age_for_top_ten(const cyclist* list_of_cyclists);
 
 int main(void){
-
     int i = 0, list_length_of_all_cyclists, list_length_of_danes_who_finished, list_length_of_ranglist, number_of_races = 0, total_time_for_fastes_cyclist;
-    cyclist *list_of_cyclists, *ranglist_of_cyclists_with_total_points, fastes_cyclist;
+    cyclist *list_of_cyclists, *ranglist_of_cyclists_with_total_points, *fastes_cyclist;
     dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race;
     race* races;
-
     races = (race *)malloc(TOTAL_NUMBER_OF_RACES * sizeof(race));
 
     list_of_cyclists = read_file_to_list(&list_length_of_all_cyclists, races, &number_of_races);
 
-    /*print_list_of_cyclists(list_of_cyclists, list_length_of_all_cyclists);*/
+    fastes_cyclist = list_of_cyclists;
 
     print_italian_cyclists_above_thirty(list_of_cyclists, list_length_of_all_cyclists);
 
@@ -75,7 +81,12 @@ int main(void){
 
     print_list_of_cyclists(ranglist_of_cyclists_with_total_points, 10, 1);
 
-    find_fastes_cyclist_of_paris_and_amstel(list_of_cyclists, &list_length_of_all_cyclists, &fastes_cyclist, &total_time_for_fastes_cyclist);
+    find_fastes_cyclist_of_paris_and_amstel(list_of_cyclists, &list_length_of_all_cyclists, fastes_cyclist, &total_time_for_fastes_cyclist);
+
+    printf("%s      ", fastes_cyclist->cyclist_name);
+    print_total_time(total_time_for_fastes_cyclist);
+
+    /*printf("The average age for cyclists in the top 10 of any race is: %lf", average_age_for_top_ten(list_of_cyclists));*/
 
     free(list_of_cyclists);
     free(list_of_danish_cyclists_who_finished_a_race);
@@ -86,7 +97,7 @@ int main(void){
 }
 
 void* read_file_to_list(int* list_length, race* races, int* number_of_races){
-    int i = 0, j = 0, scan_result;
+    int i = 0, scan_result;
     char temporary_placeholder_placement[4];
     FILE* read_file_pointer = fopen("cykelloeb","r");
 
@@ -125,10 +136,6 @@ void* read_file_to_list(int* list_length, race* races, int* number_of_races){
         /*Insert ERROR code*/
     }
     *list_length = i;
-
-    for(i = 0; i < j; i++){
-        printf("%s %d\n", races[i].name, races[i].roster_size);
-    }
 
     fclose(read_file_pointer);
 
@@ -310,15 +317,24 @@ void get_last_name(cyclist* cyclist){
         }
     }
 }
-void find_fastes_cyclist_of_paris_and_amstel(const cyclist* full_list, const int* full_list_length, cyclist* fastes_cyclist, int* time_for_fastes_cyclist){
-    int paris_list_length = 0, amstel_list_length = 0, list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][2];
+void find_fastes_cyclist_of_paris_and_amstel(cyclist* full_list, const int* full_list_length, cyclist* fastes_cyclist, int* time_for_fastes_cyclist){
+    int i, paris_list_length = 0, amstel_list_length = 0, list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], number_of_cyclists_in_both_races = 0;
     cyclist *paris_cyclists, *amstel_cyclists;
 
     paris_cyclists = (cyclist *)malloc(TOTAL_NUMBER_OF_PARTICIPENTS * sizeof(cyclist));
     amstel_cyclists = (cyclist *)malloc(TOTAL_NUMBER_OF_PARTICIPENTS * sizeof(cyclist));
 
     make_list_of_cyclists_paris_amstel(full_list, paris_cyclists, amstel_cyclists, full_list_length, &paris_list_length, &amstel_list_length);
-    make_array_with_positions_of_cyclists_in_the_two_arrays(paris_list_length, amstel_list_length, paris_cyclists, amstel_cyclists, list_placements);
+    make_array_with_positions_of_cyclists_in_the_two_arrays(paris_list_length, amstel_list_length, paris_cyclists, amstel_cyclists, list_placements, &number_of_cyclists_in_both_races);
+
+    for(i = 0; i < number_of_cyclists_in_both_races; i++){
+        list_placements[i][2] = get_total_time(paris_cyclists[list_placements[i][0]].time, amstel_cyclists[list_placements[i][1]].time);
+    }
+
+    i = find_shortest_time(list_placements, number_of_cyclists_in_both_races);
+
+    fastes_cyclist = &full_list[i];
+    *time_for_fastes_cyclist = list_placements[i][2];
 
     free(paris_cyclists);
     free(amstel_cyclists);
@@ -335,18 +351,49 @@ void make_list_of_cyclists_paris_amstel(const cyclist* full_list, cyclist* paris
         }
     }
 }
-void make_array_with_positions_of_cyclists_in_the_two_arrays(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][2]){
+void make_array_with_positions_of_cyclists_in_the_two_arrays(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int* number_of_cyclists_in_both_races){
     int i, j, k = 0;
     for(i = 0; i < paris_list_length; i++){
         for(j = 0; j < amstel_list_length; j++){
-            if(strcmp(paris_cyclists[i].cyclist_name, amstel_cyclists[j].cyclist_name) == 0){
+            if(strcmp(paris_cyclists[i].cyclist_name, amstel_cyclists[j].cyclist_name) == 0 &&
+            (paris_cyclists[i].time[0] + paris_cyclists[i].time[1] + paris_cyclists[i].time[2]) > 0 &&
+            (amstel_cyclists[j].time[0] + amstel_cyclists[j].time[1] + amstel_cyclists[j].time[2]) > 0){
                 list_placements[k][0] = i;
                 list_placements[k][1] = j;
                 k++;
             }
         }
     }
+    *number_of_cyclists_in_both_races = k;
+}
+int get_total_time(int paris_time[3], int amstel_time[3]){
+    return (paris_time[0]*HOUR_IN_SECONDS + paris_time[1]*MINUTE_IN_SECONDS + paris_time[2]) + (amstel_time[0]*HOUR_IN_SECONDS + amstel_time[1]*MINUTE_IN_SECONDS + amstel_time[2]);
+}
+int find_shortest_time(int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int list_length){
+    int i, j = INFINITY, k;
+    for(i = 0; i < list_length; i++){
+        j = smallest_of(j, list_placements[i][2]);
+        if(j == list_placements[i][2]){
+            k = i;
+        }
+    }
+    return k;
 }
 int biggest_of(const int a, const int b){
     return (a > b ? a : b);
+}
+int smallest_of(const int a, const int b){
+    return (a < b ? a : b);
+}
+void print_total_time(const int i){
+    int hours, minutes, seconds;
+    hours = i / HOUR_IN_SECONDS;
+    seconds = i % HOUR_IN_SECONDS;
+    minutes = seconds / MINUTE_IN_SECONDS;
+    seconds = seconds % MINUTE_IN_SECONDS;
+    printf("Time spend: %d hours, %d minutes and %d seconds\n", hours, minutes, seconds);
+}
+double average_age_for_top_ten(const cyclist* list_of_cyclists){
+    double average_age;
+    
 }
