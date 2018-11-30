@@ -56,7 +56,9 @@ int find_shortest_time(int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int
 int biggest_of(const int a, const int b);
 int smallest_of(const int a, const int b);
 void print_total_time(const int i);
-double average_age_for_top_ten(const cyclist* list_of_cyclists);
+double average_age_for_top_ten(cyclist* list, const int list_length, const int number_of_races);
+int compare_race_name(const void* a, const void* b);
+cyclist* remove_doublets(cyclist* list, int* list_length);
 
 int main(void){
     int i = 0, list_length_of_all_cyclists, list_length_of_danes_who_finished, list_length_of_ranglist, number_of_races = 0, total_time_for_fastes_cyclist;
@@ -86,7 +88,7 @@ int main(void){
     printf("%s      ", fastes_cyclist->cyclist_name);
     print_total_time(total_time_for_fastes_cyclist);
 
-    /*printf("The average age for cyclists in the top 10 of any race is: %lf", average_age_for_top_ten(list_of_cyclists));*/
+    printf("The average age for cyclists in the top 10 of any race is: %lf", average_age_for_top_ten(list_of_cyclists, list_length_of_all_cyclists, number_of_races));
 
     free(list_of_cyclists);
     free(list_of_danish_cyclists_who_finished_a_race);
@@ -265,7 +267,6 @@ void* create_and_sort_ranglist(cyclist* list, const int full_list_length, int* l
     /*print_list_of_cyclists(output_pointer_with_ranglist, j);*/
 
     return output_pointer_with_ranglist;
-
 }
 void assign_points_to_cyclists_for_every_race(cyclist* list, const int full_list_length, const race* races){
     int i = 0, j = 0;
@@ -393,7 +394,84 @@ void print_total_time(const int i){
     seconds = seconds % MINUTE_IN_SECONDS;
     printf("Time spend: %d hours, %d minutes and %d seconds\n", hours, minutes, seconds);
 }
-double average_age_for_top_ten(const cyclist* list_of_cyclists){
-    double average_age;
-    
+double average_age_for_top_ten(cyclist* list, const int list_length, const int number_of_races){
+    int i, current_race_number = 0, current_cyclists_in_top_ten_for_current_race = 0, all_top_tens_length = 0;
+    double average_age = 0.0;
+    char* current_race;
+    cyclist* top_ten_cyclists, *clean_list;
+    current_race = (char *)malloc(MAX_RACE_NAME_LENGTH * sizeof(char));
+    top_ten_cyclists = (cyclist *)malloc(TOTAL_NUMBER_OF_PARTICIPENTS * sizeof(cyclist));
+
+    printf("\n\n\n");
+
+    qsort(list, list_length, sizeof(cyclist), compare_race_name);
+
+    for(i = 0; i < list_length; i++){
+        if(strcmp(current_race, list[i].race_name) != 0){
+            if(current_race_number < number_of_races - 2){
+                current_race_number++;
+                strcpy(current_race, list[i].race_name);
+                current_cyclists_in_top_ten_for_current_race = 0;
+            }
+            if(current_cyclists_in_top_ten_for_current_race < 10){
+                top_ten_cyclists[10 * (current_race_number) + current_cyclists_in_top_ten_for_current_race] = list[i];
+                current_cyclists_in_top_ten_for_current_race++;
+            }
+        }else{
+            if(current_cyclists_in_top_ten_for_current_race < 10){
+                top_ten_cyclists[10 * (current_race_number) + current_cyclists_in_top_ten_for_current_race] = list[i];
+                current_cyclists_in_top_ten_for_current_race++;
+            }else{
+
+            }
+        }
+    }
+
+    all_top_tens_length = 10 * (current_race_number) + current_cyclists_in_top_ten_for_current_race;
+
+    clean_list = remove_doublets(top_ten_cyclists, &all_top_tens_length);
+
+    for(i = 0; i < all_top_tens_length; i++){
+        average_age += clean_list[i].age;
+    }
+    average_age = average_age / all_top_tens_length;
+
+    free(clean_list);
+    free(current_race);
+    free(top_ten_cyclists);
+
+    return average_age;
+}
+int compare_race_name(const void* a, const void* b){
+    cyclist *pointer_one = (cyclist *) a;
+    cyclist *pointer_two = (cyclist *) b;
+
+    if(strcmp(pointer_one->race_name, pointer_two->race_name) == 0){
+        if((pointer_one->placement > 0 ? pointer_one->placement : 99999) > (pointer_two->placement > 0 ? pointer_two->placement : 99999)){
+            return 1;
+        }else if((pointer_one->placement > 0 ? pointer_one->placement : 99999) < (pointer_two->placement > 0 ? pointer_two->placement : 99999)){
+            return -1;
+        }else{
+            return 0;
+        }
+    }else{
+        return strcmp(pointer_one->race_name, pointer_two->race_name);
+    }
+}
+cyclist* remove_doublets(cyclist* list, int* list_length){
+    int i, j = 0, k = 0;
+    cyclist* clean_list;
+    clean_list = (cyclist *)malloc(*list_length * sizeof(cyclist));
+    for(i = 0; i < *list_length; i++){
+        j = 0;
+        while(strcmp(clean_list[j].cyclist_name, list[i].cyclist_name) != 0 && j < k){
+            j++;
+        }
+        if(j == k){
+            clean_list[k] = list[i];
+            k++;
+        }
+    }
+    *list_length = k;
+    return clean_list;
 }
