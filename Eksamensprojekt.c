@@ -1,12 +1,13 @@
+/*Niels Frederik Sinding Vistisen
+nvisti18@student.aau.dk
+A401 - Software*/
+
 /*First the needed libraries har included*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-
-/*This integer is initialized for error control*/
-extern int errno;
 
 /*Then some generel values are defined*/
 #define MAX_RACE_NAME_LENGTH 20
@@ -128,7 +129,7 @@ int main(int argc, char const *argv[]){
 
             print_assignment_number(5);
             /*The average age for the top ten cyclists is then printed and calculated*/
-            printf("The average age for cyclists in the top 10 of any race is: %lf\n\n\n", average_age_for_top_ten(list_of_cyclists, list_length_of_all_cyclists, number_of_races));
+            printf("The average age for cyclists in the top 10 of any race is: %lf years\n\n\n", average_age_for_top_ten(list_of_cyclists, list_length_of_all_cyclists, number_of_races));
         }else{
             /*If there is a second input parameter, but it is not --print, the program terminates*/
             printf("Incorrect argument for the program\n");
@@ -181,7 +182,7 @@ int main(int argc, char const *argv[]){
 
                 case 5:
                     /*The average age for the top ten cyclists is then printed and calculated*/
-                    printf("The average age for cyclists in the top 10 of any race is: %lf\n\n\n", average_age_for_top_ten(list_of_cyclists, list_length_of_all_cyclists, number_of_races));
+                    printf("The average age for cyclists in the top 10 of any race is: %lf years\n\n\n", average_age_for_top_ten(list_of_cyclists, list_length_of_all_cyclists, number_of_races));
                 break;
 
                 default:
@@ -203,7 +204,7 @@ int main(int argc, char const *argv[]){
 
 /*The following is all used functions in order of usage*/
 void* read_file_to_list(int* list_length, race* races, int* number_of_races){
-    int current_position_in_array = 0, scan_result;
+    int current_position_in_array = 0, scan_result, errno;
     char temporary_placeholder_placement[4];
     FILE* read_file_pointer = fopen("cykelloeb","r");
 
@@ -267,7 +268,7 @@ void* read_file_to_list(int* list_length, race* races, int* number_of_races){
     }
 }
 void print_assignment_number(int assignment_number){
-    printf("-----Answers for assignment %d-----\n\n", assignment_number);
+    printf("-----Result for assignment %d-----\n\n", assignment_number);
 }
 void count_up_race_rosters(const int cyclist_number, const cyclist* output_pointer_to_array_of_cyclists, race* races, int* number_of_races){
     int number_of_current_race = *number_of_races, current_position_in_race_array = 0, found_match = 0, end_of_array = 0;
