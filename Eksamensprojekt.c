@@ -23,7 +23,7 @@ A401 - Software*/
 #define MINUTE_IN_SECONDS 60
 #define INFINITY 999999
 
-/*Then structs for holder the information for a cyclist and a race are defined*/
+/*Then structs for holding the information for a cyclist and a race are defined*/
 struct cyclist{
     char race_name[MAX_RACE_NAME_LENGTH];
     char cyclist_name[MAX_CYCLIST_NAME_LENGTH];
@@ -41,8 +41,8 @@ struct race{
     int roster_size;
 };typedef struct race race;
 
-/*I have chosen to create a struct containing only name and number of races for
-danes, so I would not have to assign a value of number of races to every cyclist*/
+/*I have chosen to create a struct containing only name and number of races for a
+dane, so I would not have to assign a value of number of races to every cyclist*/
 struct dane_who_finished_a_race{
     char cyclist_name[MAX_CYCLIST_NAME_LENGTH];
     int number_of_finished_races;
@@ -56,10 +56,11 @@ void qsort(void *array, size_t lenght, size_t size, int (*compar)(const void *, 
 void print_italian_cyclists_above_thirty(const cyclist* list, const int list_length);
 void print_list_of_cyclists(const cyclist* list, const int list_length);
 dane_who_finished_a_race* danish_cyclists_who_finished_a_race(cyclist* list, const int full_list_length, int* list_length);
-void print_danes(dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race, int list_length_of_danes_who_finished);
+void print_danes(const dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race, const int list_length_of_danes_who_finished);
 void add_danes_to_array(dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race, cyclist* list, int current_position_in_list_of_cyclists, int* current_length_of_danes_list);
 void* create_and_sort_leaderboard(cyclist* list, const int full_list_length, int* list_length, const race* races);
 void assign_points_to_cyclists_for_every_race(cyclist* list, const int full_list_length, const race* races);
+void podium_points(cyclist* current_cyclist, const race* races);
 void accumulate_points_for_every_cyclist_and_remove_doublets(cyclist* list, cyclist* output_pointer_with_leaderboard, int current_position_in_list_of_cyclists, int* current_length_of_leaderboard);
 int compare_points(const void* a, const void* b);
 void print_overall_leaderboard(const cyclist* list, const int list_length);
@@ -67,11 +68,11 @@ void get_last_name(cyclist* cyclist);
 void find_fastes_cyclist_of_paris_and_amstel(cyclist* full_list, const int* full_list_length, cyclist* fastes_cyclist, int* time_for_fastes_cyclist);
 void make_list_of_cyclists_paris_amstel(const cyclist* full_list, cyclist* paris_cyclists, cyclist* amstel_cyclists, const int* full_list_length, int* paris_list_length, int* amstel_list_length);
 void make_array_with_positions_of_cyclists_in_the_two_arrays(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int* number_of_cyclists_in_both_races);
+void checking_amstel_race_and_time_for_both_races(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int current_position_in_paris_list, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int* current_length_of_placement_list);
 int get_total_time(int paris_time[3], int amstel_time[3]);
 int find_shortest_time(int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int list_length);
-int biggest_of(const int a, const int b);
 int smallest_of(const int a, const int b);
-void print_total_time(const cyclist* cyclist, const int i);
+void print_total_time(const cyclist* cyclist, const int total_time_in_seconds);
 double average_age_for_top_ten(cyclist* list, const int list_length, const int number_of_races);
 int compare_race_name(const void* a, const void* b);
 cyclist* remove_doublets(cyclist* list, int* list_length);
@@ -81,7 +82,8 @@ void handle_input(int* scan_result, int* user_input, int* user_typed_exit);
 
 int main(int argc, char const *argv[]){
 
-    int scan_result = 0, user_input = 0, user_typed_exit = 0, list_length_of_all_cyclists, list_length_of_danes_who_finished, list_length_of_leaderboard, number_of_races = 0, total_time_for_fastes_cyclist;
+    int scan_result = 0, user_input = 0, user_typed_exit = 0, list_length_of_all_cyclists, list_length_of_danes_who_finished,
+    list_length_of_leaderboard, number_of_races = 0, total_time_for_fastes_cyclist;
     cyclist *list_of_cyclists, *leaderboard_of_cyclists_with_total_points, *fastes_cyclist;
     dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race;
     race* races;
@@ -93,20 +95,21 @@ int main(int argc, char const *argv[]){
     if(argc > 1){
         if(strcmp(argv[1], "--print") == 0){
             /*If the input is --print, the results for every assignment should be printed*/
+            /*The file is first read*/
             list_of_cyclists = read_file_to_list(&list_length_of_all_cyclists, races, &number_of_races);
             print_assignment_number(1);
 
-            /*The function for finding and printing the italians above thirty is the called*/
+            /*The function for finding and printing the italians above thirty is called*/
             print_italian_cyclists_above_thirty(list_of_cyclists, list_length_of_all_cyclists);
 
             print_assignment_number(2);
             /*Then the list of danes who have finished at least one race is found*/
             list_of_danish_cyclists_who_finished_a_race = danish_cyclists_who_finished_a_race(list_of_cyclists, list_length_of_all_cyclists, &list_length_of_danes_who_finished);
 
-            /*Here the danes are then printed*/
+            /*Here the danes are printed*/
             print_danes(list_of_danish_cyclists_who_finished_a_race, list_length_of_danes_who_finished);
 
-            /*Every dynamic allocated memory is then freed*/
+            /*The dynamicly allocated memory is then freed*/
             free(list_of_danish_cyclists_who_finished_a_race);
 
             print_assignment_number(3);
@@ -116,15 +119,15 @@ int main(int argc, char const *argv[]){
             /*The top ten is then printed*/
             print_overall_leaderboard(leaderboard_of_cyclists_with_total_points, 10);
 
-            /*Every dynamic allocated memory is then freed*/
+            /*That dynamicly allocated memory is then freed*/
             free(leaderboard_of_cyclists_with_total_points);
 
             print_assignment_number(4);
-            /*The fastes_cyclist pointer is set to the same list, as it will need a value to be a parameter in the following function*/
+            /*The fastes_cyclist pointer is set to point to the full list, as it will need a value to be a parameter in the following function*/
             fastes_cyclist = list_of_cyclists;
             find_fastes_cyclist_of_paris_and_amstel(list_of_cyclists, &list_length_of_all_cyclists, fastes_cyclist, &total_time_for_fastes_cyclist);
 
-            /*fastes_cyclist is the printed out with the total time*/
+            /*fastes_cyclist is then printed out, with the total time*/
             print_total_time(fastes_cyclist, total_time_for_fastes_cyclist);
 
             print_assignment_number(5);
@@ -136,65 +139,64 @@ int main(int argc, char const *argv[]){
             exit(-1);
         }
     }else{
-        while(user_typed_exit == 0){
-            handle_input(&scan_result, &user_input, &user_typed_exit);
+        handle_input(&scan_result, &user_input, &user_typed_exit);
 
-            /*I read the file to an array of structs using the read_file_to_list function,
-            which returns a pointer to the list position*/
-            list_of_cyclists = read_file_to_list(&list_length_of_all_cyclists, races, &number_of_races);
-            print_assignment_number(user_input);
-            switch(user_input){
-                case 1:
-                    /*The function for finding and printing the italians above thirty is the called*/
-                    print_italian_cyclists_above_thirty(list_of_cyclists, list_length_of_all_cyclists);
-                break;
+        /*I read the file to an array of structs using the read_file_to_list function,
+        which returns a pointer to the list position*/
+        list_of_cyclists = read_file_to_list(&list_length_of_all_cyclists, races, &number_of_races);
+        print_assignment_number(user_input);
+        switch(user_input){
+            case 1:
+                /*The function for finding and printing the italians above thirty is the called*/
+                print_italian_cyclists_above_thirty(list_of_cyclists, list_length_of_all_cyclists);
+            break;
 
-                case 2:
-                    /*Then the list of danes who have finished at least one race is found*/
-                    list_of_danish_cyclists_who_finished_a_race = danish_cyclists_who_finished_a_race(list_of_cyclists, list_length_of_all_cyclists, &list_length_of_danes_who_finished);
+            case 2:
+                /*Then the list of danes who have finished at least one race is found*/
+                list_of_danish_cyclists_who_finished_a_race = danish_cyclists_who_finished_a_race(list_of_cyclists, list_length_of_all_cyclists, &list_length_of_danes_who_finished);
 
-                    /*Here the danes are then printed*/
-                    print_danes(list_of_danish_cyclists_who_finished_a_race, list_length_of_danes_who_finished);
+                /*Here the danes are then printed*/
+                print_danes(list_of_danish_cyclists_who_finished_a_race, list_length_of_danes_who_finished);
 
-                    /*Every dynamic allocated memory is then freed*/
-                    free(list_of_danish_cyclists_who_finished_a_race);
-                break;
+                /*The dynamicly allocated memory is then freed*/
+                free(list_of_danish_cyclists_who_finished_a_race);
+            break;
 
-                case 3:
-                    /*The leaderboard is made using the create_and_sort_leaderboard function*/
-                    leaderboard_of_cyclists_with_total_points = create_and_sort_leaderboard(list_of_cyclists, list_length_of_all_cyclists, &list_length_of_leaderboard, races);
+            case 3:
+                /*The leaderboard is made using the create_and_sort_leaderboard function*/
+                leaderboard_of_cyclists_with_total_points = create_and_sort_leaderboard(list_of_cyclists, list_length_of_all_cyclists, &list_length_of_leaderboard, races);
 
-                    /*The top ten is then printed*/
-                    print_overall_leaderboard(leaderboard_of_cyclists_with_total_points, 10);
+                /*The top ten is then printed*/
+                print_overall_leaderboard(leaderboard_of_cyclists_with_total_points, 10);
 
-                    /*Every dynamic allocated memory is then freed*/
-                    free(leaderboard_of_cyclists_with_total_points);
-                break;
+                /*The dynamicly allocated memory is then freed*/
+                free(leaderboard_of_cyclists_with_total_points);
+            break;
 
-                case 4:
-                    /*The fastes_cyclist pointer is set to the same list, as it will need a value to be a parameter in the following function*/
-                    fastes_cyclist = list_of_cyclists;
-                    find_fastes_cyclist_of_paris_and_amstel(list_of_cyclists, &list_length_of_all_cyclists, fastes_cyclist, &total_time_for_fastes_cyclist);
+            case 4:
+                /*The fastes_cyclist pointer is set to the same list, as it will need a value to be a parameter in the following function*/
+                fastes_cyclist = list_of_cyclists;
+                find_fastes_cyclist_of_paris_and_amstel(list_of_cyclists, &list_length_of_all_cyclists, fastes_cyclist, &total_time_for_fastes_cyclist);
 
-                    /*fastes_cyclist is the printed out with the total time*/
-                    print_total_time(fastes_cyclist, total_time_for_fastes_cyclist);
-                break;
+                /*fastes_cyclist is the printed out with the total time*/
+                print_total_time(fastes_cyclist, total_time_for_fastes_cyclist);
+            break;
 
-                case 5:
-                    /*The average age for the top ten cyclists is then printed and calculated*/
-                    printf("The average age for cyclists in the top 10 of any race is: %lf years\n\n\n", average_age_for_top_ten(list_of_cyclists, list_length_of_all_cyclists, number_of_races));
-                break;
+            case 5:
+                /*The average age for the top ten cyclists is then printed and calculated*/
+                printf("The average age for cyclists in the top 10 of any race is: %lf years\n\n\n", average_age_for_top_ten(list_of_cyclists, list_length_of_all_cyclists, number_of_races));
+            break;
 
-                default:
-                    printf("Something went wrong...\n");
-                    exit(-1);
-                break;
-            }
-            user_input = 0;
-            scan_result = 0;
+            default:
+                /*If an unexpected input slips through my if statement in the
+                handle_input function, the program terminates*/
+                printf("Something went wrong with the input...\n");
+                exit(-1);
+            break;
         }
-        /*Every dynamic allocated memory is then freed*/
+        /*The remaining dynamicly allocated memory is then freed*/
         free(list_of_cyclists);
+        free(fastes_cyclist);
         free(races);
     }
 
@@ -202,9 +204,9 @@ int main(int argc, char const *argv[]){
     return 0;
 }
 
-/*The following is all used functions in order of usage*/
+/*The following is all the functions needed, sorted in order of usage*/
 void* read_file_to_list(int* list_length, race* races, int* number_of_races){
-    int current_position_in_array = 0, scan_result, errno;
+    int current_position_in_array = 0, errno;
     char temporary_placeholder_placement[4];
     FILE* read_file_pointer = fopen("cykelloeb","r");
 
@@ -222,20 +224,17 @@ void* read_file_to_list(int* list_length, race* races, int* number_of_races){
 
         /*The while loop runs through the entire document and loads very line to a cyclist strcut*/
         while(!feof(read_file_pointer)){
-            scan_result = fscanf(read_file_pointer, " %[a-zA-Z] \"%[a-zA-Z-' ]\" | %d %[A-Z] %[A-Z] | %3[A-Z0-9] %d : %d : %d",
-                                                    output_pointer_to_array_of_cyclists[current_position_in_array].race_name,
-                                                    output_pointer_to_array_of_cyclists[current_position_in_array].cyclist_name,
-                                                    &output_pointer_to_array_of_cyclists[current_position_in_array].age,
-                                                    output_pointer_to_array_of_cyclists[current_position_in_array].team,
-                                                    output_pointer_to_array_of_cyclists[current_position_in_array].nationality,
-                                                    temporary_placeholder_placement,
-                                                    &output_pointer_to_array_of_cyclists[current_position_in_array].time[0],
-                                                    &output_pointer_to_array_of_cyclists[current_position_in_array].time[1],
-                                                    &output_pointer_to_array_of_cyclists[current_position_in_array].time[2]);
-            /*The scan is check to ensure that it was done correctly, else the program outputs an error message*/
-            if(scan_result < 9){
-                /*Insert ERROR code*/
-            }
+            fscanf(read_file_pointer, " %[a-zA-Z] \"%[a-zA-Z-' ]\" | %d %[A-Z] %[A-Z] | %3[A-Z0-9] %d : %d : %d",
+                                    output_pointer_to_array_of_cyclists[current_position_in_array].race_name,
+                                    output_pointer_to_array_of_cyclists[current_position_in_array].cyclist_name,
+                                    &output_pointer_to_array_of_cyclists[current_position_in_array].age,
+                                    output_pointer_to_array_of_cyclists[current_position_in_array].team,
+                                    output_pointer_to_array_of_cyclists[current_position_in_array].nationality,
+                                    temporary_placeholder_placement,
+                                    &output_pointer_to_array_of_cyclists[current_position_in_array].time[0],
+                                    &output_pointer_to_array_of_cyclists[current_position_in_array].time[1],
+                                    &output_pointer_to_array_of_cyclists[current_position_in_array].time[2]);
+
             /*The following changes the placement string to an integer*/
             if(strcmp(temporary_placeholder_placement,"OTL") == 0){
                 output_pointer_to_array_of_cyclists[current_position_in_array].placement = OTL;
@@ -255,9 +254,11 @@ void* read_file_to_list(int* list_length, race* races, int* number_of_races){
 
             current_position_in_array++;
         }
+        /*The current_position_in_array is decreased by one, so that is gives the
+        correct length of the list (starting from 0)*/
         current_position_in_array--;
 
-        /*The length of the list is return using a pointer*/
+        /*The length of the list is returned using a pointer*/
         *list_length = current_position_in_array;
 
         /*The file gets closed*/
@@ -273,7 +274,7 @@ void print_assignment_number(int assignment_number){
 void count_up_race_rosters(const int cyclist_number, const cyclist* output_pointer_to_array_of_cyclists, race* races, int* number_of_races){
     int number_of_current_race = *number_of_races, current_position_in_race_array = 0, found_match = 0, end_of_array = 0;
     /*The race_name from the cyclist is checked with every race already added to the race list.
-    If it is already in the list, its roster_size is increased by 1, else it is added*/
+    If it is already in the list, its roster_size is increased by 1, else the race is added*/
     while(current_position_in_race_array <= number_of_current_race && found_match == 0 && end_of_array == 0){
         if((current_position_in_race_array == number_of_current_race && strcmp(output_pointer_to_array_of_cyclists[cyclist_number].race_name, races[current_position_in_race_array].name) != 0)){
             strcpy(races[current_position_in_race_array].name, output_pointer_to_array_of_cyclists[cyclist_number].race_name);
@@ -303,7 +304,7 @@ void print_italian_cyclists_above_thirty(const cyclist* list, const int list_len
         current_position_in_list++;
     }
 
-    /*The array is then printet without points*/
+    /*The array is then printet*/
     print_list_of_cyclists(list_of_italian_cyclists_above_thirty, current_position_in_italian_array);
 }
 void print_list_of_cyclists(const cyclist* list, const int list_length){
@@ -328,6 +329,8 @@ void print_list_of_cyclists(const cyclist* list, const int list_length){
                                              list[current_position_in_list].team,
                                              list[current_position_in_list].nationality,
                                              placement_as_string);
+
+        /*The time is printed out, if the cyclist finished, else "--:--:--" is printed*/
         if(list[current_position_in_list].placement > DNF){
             printf("%02d:%02d:%02d\n", list[current_position_in_list].time[0],
                                     list[current_position_in_list].time[1],
@@ -360,7 +363,8 @@ dane_who_finished_a_race* danish_cyclists_who_finished_a_race(cyclist* list, con
 void add_danes_to_array(dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race, cyclist* list, int current_position_in_list_of_cyclists, int* current_length_of_danes_list){
     int current_position_in_list_of_danes = 0, found_match = 0, end_of_array = 0;
 
-    /*Every dane with a better placement than DNF is either added to the array or, if the cyclist is already in the array, the number of races finished is increased by 1*/
+    /*Every dane with a better placement than DNF is either added to the array or,
+    if the cyclist is already in the array, the number of races finished is increased by 1*/
     while(current_position_in_list_of_danes <= *current_length_of_danes_list && found_match == 0 && end_of_array == 0){
         if(strcmp(list[current_position_in_list_of_cyclists].cyclist_name, list_of_danish_cyclists_who_finished_a_race[current_position_in_list_of_danes].cyclist_name) == 0){
             list_of_danish_cyclists_who_finished_a_race[current_position_in_list_of_danes].number_of_finished_races++;
@@ -375,13 +379,12 @@ void add_danes_to_array(dane_who_finished_a_race* list_of_danish_cyclists_who_fi
         }
     }
 }
-void print_danes(dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race, int list_length_of_danes_who_finished){
+void print_danes(const dane_who_finished_a_race* list_of_danish_cyclists_who_finished_a_race, const int list_length_of_danes_who_finished){
     int current_position_in_array;
+    /*The input array is run through and printed*/
     for(current_position_in_array = 0; current_position_in_array < list_length_of_danes_who_finished; current_position_in_array++){
-
         printf("%-28s %d\n", list_of_danish_cyclists_who_finished_a_race[current_position_in_array].cyclist_name,
                           list_of_danish_cyclists_who_finished_a_race[current_position_in_array].number_of_finished_races);
-
     }
     printf("\n\n\n");
 }
@@ -407,25 +410,30 @@ void* create_and_sort_leaderboard(cyclist* list, const int full_list_length, int
     return output_pointer_with_leaderboard;
 }
 void assign_points_to_cyclists_for_every_race(cyclist* list, const int full_list_length, const race* races){
-    int i = 0, j = 0;
-    while(i < full_list_length){
-        if(list[i].placement > -1){
-            list[i].points += 3;
-            while(strcmp(list[i].race_name, races[j].name) != 0){
-                j++;
-            }
-            list[i].points += (races[j].roster_size - list[i].placement)/13;
-            if(list[i].placement == 1){
-                list[i].points += 10;
-            }else if(list[i].placement == 2){
-                list[i].points += 5;
-            }else if(list[i].placement == 3){
-                list[i].points += 2;
-            }
-        }else if(list[i].placement == -1){
-            list[i].points += 1;
+    int current_position_in_list = 0;
+
+    while(current_position_in_list < full_list_length){
+        if(list[current_position_in_list].placement > -1){
+            list[current_position_in_list].points += 3;
+            podium_points(&list[current_position_in_list], races);
+        }else if(list[current_position_in_list].placement == -1){
+            list[current_position_in_list].points += 1;
         }
-        i++;
+        current_position_in_list++;
+    }
+}
+void podium_points(cyclist* current_cyclist, const race* races){
+    int current_position_in_races = 0;
+    while(strcmp(current_cyclist->race_name, races[current_position_in_races].name) != 0){
+        current_position_in_races++;
+    }
+    current_cyclist->points += (races[current_position_in_races].roster_size - current_cyclist->placement)/13;
+    if(current_cyclist->placement == 1){
+        current_cyclist->points += 10;
+    }else if(current_cyclist->placement == 2){
+        current_cyclist->points += 5;
+    }else if(current_cyclist->placement == 3){
+        current_cyclist->points += 2;
     }
 }
 void accumulate_points_for_every_cyclist_and_remove_doublets(cyclist* list, cyclist* output_pointer_with_leaderboard, int current_position_in_list_of_cyclists, int* current_length_of_leaderboard){
@@ -454,6 +462,8 @@ void accumulate_points_for_every_cyclist_and_remove_doublets(cyclist* list, cycl
 int compare_points(const void* a, const void* b){
     cyclist *pointer_one = (cyclist *) a;
     cyclist *pointer_two = (cyclist *) b;
+    /*Here the points of the 2 cyclists are compared and if they are equal,
+    their last name is compared*/
     if(pointer_one->points < pointer_two->points){
         return 1;
     }else if(pointer_one->points > pointer_two->points){
@@ -483,16 +493,16 @@ void print_overall_leaderboard(const cyclist* list, const int list_length){
     printf("\n\n\n");
 }
 void get_last_name(cyclist* cyclist){
-    int i, exit = 0, full_name_length;
+    int current_position_in_name, exit = 0, full_name_length;
     full_name_length = strlen(cyclist->cyclist_name);
 
     /*This loops runs through the name from the back, until it meets a lowercase letter,
     in which case it return the position +2, due to the fact that the lowercase letter
     and the space after it, is not wanted in the last name*/
-    for(i = full_name_length; i > 0 && exit == 0; i--){
-        if(i == islower(*(cyclist->cyclist_name + i))){
-            i += 2;
-            strncpy(cyclist->last_name, (cyclist->cyclist_name) + i, full_name_length-i);
+    for(current_position_in_name = full_name_length; current_position_in_name > 0 && exit == 0; current_position_in_name--){
+        if(current_position_in_name == islower(*(cyclist->cyclist_name + current_position_in_name))){
+            current_position_in_name += 2;
+            strncpy(cyclist->last_name, (cyclist->cyclist_name) + current_position_in_name, full_name_length - current_position_in_name);
             exit = 1;
         }
     }
@@ -540,23 +550,28 @@ void make_list_of_cyclists_paris_amstel(const cyclist* full_list, cyclist* paris
     }
 }
 void make_array_with_positions_of_cyclists_in_the_two_arrays(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int* number_of_cyclists_in_both_races){
-    int current_position_in_paris_list, current_position_in_amstel_list, current_length_of_placement_list = 0;
+    int current_position_in_paris_list, current_length_of_placement_list = 0;
 
     /*The 2 loops compare the cyclists in the 2 races and finds those, who participated in both*/
     for(current_position_in_paris_list = 0; current_position_in_paris_list < paris_list_length; current_position_in_paris_list++){
-
-        for(current_position_in_amstel_list = 0; current_position_in_amstel_list < amstel_list_length; current_position_in_amstel_list++){
-            if(strcmp(paris_cyclists[current_position_in_paris_list].cyclist_name, amstel_cyclists[current_position_in_amstel_list].cyclist_name) == 0 &&
-            (paris_cyclists[current_position_in_paris_list].time[0] + paris_cyclists[current_position_in_paris_list].time[1] + paris_cyclists[current_position_in_paris_list].time[2]) > 0 &&
-            (amstel_cyclists[current_position_in_amstel_list].time[0] + amstel_cyclists[current_position_in_amstel_list].time[1] + amstel_cyclists[current_position_in_amstel_list].time[2]) > 0){
-                list_placements[current_length_of_placement_list][0] = current_position_in_paris_list;
-                list_placements[current_length_of_placement_list][1] = current_position_in_amstel_list;
-                current_length_of_placement_list++;
-            }
-        }
-
+        checking_amstel_race_and_time_for_both_races(paris_list_length, amstel_list_length, paris_cyclists, amstel_cyclists, current_position_in_paris_list, list_placements, &current_length_of_placement_list);
     }
     *number_of_cyclists_in_both_races = current_length_of_placement_list;
+}
+void checking_amstel_race_and_time_for_both_races(const int paris_list_length, const int amstel_list_length, const cyclist* paris_cyclists, const cyclist* amstel_cyclists, int current_position_in_paris_list, int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int* current_length_of_placement_list){
+    int current_position_in_amstel_list;
+    /*Runs through the list of cyclists in the Amstel race and checks, if they participated
+    in the Paris race and if, they finished both races. If they did, their position in
+    the 2 lists of the races is added to the list_placements array*/
+    for(current_position_in_amstel_list = 0; current_position_in_amstel_list < amstel_list_length; current_position_in_amstel_list++){
+        if(strcmp(paris_cyclists[current_position_in_paris_list].cyclist_name, amstel_cyclists[current_position_in_amstel_list].cyclist_name) == 0 &&
+        (paris_cyclists[current_position_in_paris_list].time[0] + paris_cyclists[current_position_in_paris_list].time[1] + paris_cyclists[current_position_in_paris_list].time[2]) > 0 &&
+        (amstel_cyclists[current_position_in_amstel_list].time[0] + amstel_cyclists[current_position_in_amstel_list].time[1] + amstel_cyclists[current_position_in_amstel_list].time[2]) > 0){
+            list_placements[*current_length_of_placement_list][0] = current_position_in_paris_list;
+            list_placements[*current_length_of_placement_list][1] = current_position_in_amstel_list;
+            *current_length_of_placement_list += 1;
+        }
+    }
 }
 int get_total_time(int paris_time[3], int amstel_time[3]){
     /*Simple calculation to finde the total time in seconds*/
@@ -573,17 +588,14 @@ int find_shortest_time(int list_placements[TOTAL_NUMBER_OF_PARTICIPENTS][3], int
     }
     return position_of_shortest_time;
 }
-int biggest_of(const int a, const int b){
-    return (a > b ? a : b);
-}
 int smallest_of(const int a, const int b){
     return (a < b ? a : b);
 }
-void print_total_time(const cyclist* cyclist, const int i){
+void print_total_time(const cyclist* cyclist, const int total_time_in_seconds){
     int hours, minutes, seconds;
     /*prints the total time of the shortest time in hours, minutes and seconds*/
-    hours = i / HOUR_IN_SECONDS;
-    seconds = i % HOUR_IN_SECONDS;
+    hours = total_time_in_seconds / HOUR_IN_SECONDS;
+    seconds = total_time_in_seconds % HOUR_IN_SECONDS;
     minutes = seconds / MINUTE_IN_SECONDS;
     seconds = seconds % MINUTE_IN_SECONDS;
     printf("%s is one of the cyclists with the shortest time across both races.\n%s had a combined time of: %d hours, %d minutes and %d seconds\n\n\n",
@@ -621,7 +633,7 @@ double average_age_for_top_ten(cyclist* list, const int list_length, const int n
     /*Then the nubmer of cyclists in a top 10 is found*/
     all_top_tens_length = 10 * current_race_number + current_cyclists_in_top_ten_for_current_race;
 
-    /*And the list is clean from doublets*/
+    /*And the list is cleaned of doublets*/
     clean_list = remove_doublets(top_ten_cyclists, &all_top_tens_length);
 
     /*Lastly the average age is calculated, the memory is freed and the average age is returned*/
@@ -636,6 +648,9 @@ double average_age_for_top_ten(cyclist* list, const int list_length, const int n
 int compare_race_name(const void* a, const void* b){
     cyclist *pointer_one = (cyclist *) a;
     cyclist *pointer_two = (cyclist *) b;
+
+    /*The race_name is checked for the 2 cyclists and then the placement is checked,
+    if they compete in the same race*/
     if(strcmp(pointer_one->race_name, pointer_two->race_name) == 0){
         if((pointer_one->placement > 0 ? pointer_one->placement : 99999) > (pointer_two->placement > 0 ? pointer_two->placement : 99999)){
             return 1;
@@ -652,16 +667,16 @@ cyclist* remove_doublets(cyclist* list, int* list_length){
     int current_position_in_list, clean_list_length = 0;
     cyclist* clean_list;
     clean_list = (cyclist *)malloc(*list_length * sizeof(cyclist));
-
+    /*The list is run through and all unique cyclists are added to the clean_list*/
     for(current_position_in_list = 0; current_position_in_list < *list_length; current_position_in_list++){
         add_unique_cyclists_to_list(clean_list, list, current_position_in_list, &clean_list_length);
     }
-
     *list_length = clean_list_length;
     return clean_list;
 }
 void add_unique_cyclists_to_list(cyclist* clean_list, cyclist* list, int current_position_in_list, int* clean_list_length){
     int current_position_in_clean_list = 0;
+    /*The cyclist is checked and added to the clean_list, if not already on it*/
     while(strcmp(clean_list[current_position_in_clean_list].cyclist_name, list[current_position_in_list].cyclist_name) != 0
     && current_position_in_clean_list < *clean_list_length){
         current_position_in_clean_list++;
@@ -693,12 +708,12 @@ void handle_input(int* scan_result, int* user_input, int* user_typed_exit){
         *scan_result = scanf("%d", user_input);
         printf("\n\n\n");
         /*The if-statement checks if the scanf was succesfull and contains an expected input*/
-        if((*scan_result < 1 || *user_input > 5  || *user_input < 1) && *user_input != 0){
+        if(*scan_result < 1 || *user_input > 5  || *user_input < 0){
             printf("This is an invalid input, please type another one from the list (a number between 1-5)\n");
             *scan_result = 0;
             printf("\n\n");
         /*If the input is the exit number, the program closes down*/
-    }else if(*user_input == 0){
+        }else if(*user_input == 0){
             printf("You have exited the program.\n");
             *user_typed_exit = 1;
             exit(-1);
