@@ -90,6 +90,8 @@ int main(int argc, char const *argv[]){
     races = (race *)malloc(TOTAL_NUMBER_OF_RACES * sizeof(race));
 
     printf("\n\n\n");
+    printf("Made by: Niels Frederik Sinding Vistisen, 2018");
+    printf("\n\n\n");
 
     /*The number of input parameters is checked*/
     if(argc > 1){
